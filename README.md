@@ -1,7 +1,12 @@
-# How to run
-* download or clone the repo and open index.html
+# Dependencies / Technologies used #
+* HTML
+* CSS
+* JavaScript
 
-# How to play
+# Getting started #
+Simply download/clone repo and open index.html in your browser
+
+# How to play #
 * Pick a character
 * The goal is to get to the other side of the map
 * Avoid hitting the bugs, if a bug hits you, you will lose health
