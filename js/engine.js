@@ -13,16 +13,18 @@
  * writing app.js a little simpler to work with.
  */
 
-var Engine = (function(global) {
+const Engine = (function(global) {
     /* Predefine the variables we'll be using within this scope,
      * create the canvas element, grab the 2D context for that canvas
      * set the canvas elements height/width and add it to the DOM.
      */
-    var doc = global.document,
+    let doc = global.document,
         win = global.window,
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
-        lastTime;
+        moveMapUp = false,
+        lastTime,
+        itemsNextLevel = [];
 
     canvas.width = 505;
     canvas.height = 606;
@@ -38,8 +40,8 @@ var Engine = (function(global) {
          * would be the same for everyone (regardless of how fast their
          * computer is) - hurray time!
          */
-        var now = Date.now(),
-            dt = (now - lastTime) / 1000.0;
+        const now = Date.now();
+        const dt = (now - lastTime) / 1000.0;
 
         /* Call our update/render functions, pass along the time delta to
          * our update function since it may be used for smooth animation.
@@ -67,7 +69,7 @@ var Engine = (function(global) {
         lastTime = Date.now();
         main();
     }
-
+    
     /* This function is called by main (our game loop) and itself calls all
      * of the functions which may need to update entity's data. Based on how
      * you implement your collision detection (when two entities occupy the
@@ -79,7 +81,10 @@ var Engine = (function(global) {
      */
     function update(dt) {
         updateEntities(dt);
-        // checkCollisions();
+        if (!gameData.pause) {
+            checkCollisions();
+            scrollToNextLevel();   
+        }
     }
 
     /* This is called by the update function and loops through all of the
@@ -95,7 +100,57 @@ var Engine = (function(global) {
         });
         player.update();
     }
-
+    
+    /* Scroll map to next level if more levels */
+    function scrollToNextLevel () {
+        if (moveMapUp) {
+            gameData.moveMapUpBy += 5;
+            
+            //stop scrolling after reaching next level 
+            if (gameData.moveMapUpBy > 83 * 5) {
+                itemsNextLevel = [];
+                moveMapUp = false;
+                gameData.moveMapUpBy = 0;
+                gameData.score += 10;
+                reset();
+            }
+        } else if (player.y === 0 && !moveMapUp) {
+            if (++gameData.level !== levels.length) {
+                moveMapUp = true; 
+                itemsNextLevel = generateMap(gameData.level).newItems;
+            } else { // if no more levels, you've won
+                showWinPanel();
+            }
+        }
+    }
+        
+    /* return the landscape of the map */
+    function getMap () {
+        let rowImages = [];
+        
+        // if last level show water area, otherwise grass area
+        if (gameData.level === levels.length - 1) {
+            rowImages.push('images/water-block.png');// Water row, win area
+        } else {
+            rowImages.push('images/grass-block.png');// Grass row, move to next level
+        }
+        
+        // draw current level and next level if moving map
+        if (moveMapUp) {
+            for (let i = 0; i < 4; i++) {
+                rowImages.push('images/stone-block.png');
+            }
+            rowImages.push('images/grass-block.png');
+        }
+        
+        for (let i = 0; i < 4; i++) {
+            rowImages.push('images/stone-block.png');
+        }
+        rowImages.push('images/grass-block.png');
+        
+        return rowImages;
+    }
+    
     /* This function initially draws the "game level", it will then call
      * the renderEntities function. Remember, this function is called every
      * game tick (or loop of the game engine) because that's how games work -
@@ -106,27 +161,17 @@ var Engine = (function(global) {
         /* This array holds the relative URL to the image used
          * for that particular row of the game level.
          */
-        var rowImages = [
-                'images/water-block.png',   // Top row is water
-                'images/stone-block.png',   // Row 1 of 3 of stone
-                'images/stone-block.png',   // Row 2 of 3 of stone
-                'images/stone-block.png',   // Row 3 of 3 of stone
-                'images/grass-block.png',   // Row 1 of 2 of grass
-                'images/grass-block.png'    // Row 2 of 2 of grass
-            ],
-            numRows = 6,
-            numCols = 5,
-            row, col;
+        const rowImages = getMap();
         
         // Before drawing, clear existing canvas
-        ctx.clearRect(0,0,canvas.width,canvas.height)
-
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         /* Loop through the number of rows and columns we've defined above
          * and, using the rowImages array, draw the correct image for that
          * portion of the "grid"
          */
-        for (row = 0; row < numRows; row++) {
-            for (col = 0; col < numCols; col++) {
+        for (let row = 0; row < rowImages.length; row++) {
+            for (let col = 0; col < 5; col++) {
                 /* The drawImage function of the canvas' context element
                  * requires 3 parameters: the image to draw, the x coordinate
                  * to start drawing and the y coordinate to start drawing.
@@ -134,10 +179,14 @@ var Engine = (function(global) {
                  * so that we get the benefits of caching these images, since
                  * we're using them over and over.
                  */
-                ctx.drawImage(Resources.get(rowImages[row]), col * 101, row * 83);
+                let rowPos = (row * 83) + gameData.moveMapUpBy;
+                
+                if (rowImages.length > 6) rowPos -= (5 * 83);
+
+                ctx.drawImage(Resources.get(rowImages[row]), col * 101, rowPos);
             }
         }
-
+                
         renderEntities();
     }
 
@@ -152,16 +201,20 @@ var Engine = (function(global) {
         allEnemies.forEach(function(enemy) {
             enemy.render();
         });
-
+        
+        allItems.forEach(function(item) {
+            const y = (item.y * 83) - 25;
+            ctx.drawImage(Resources.get(item.sprite), item.x * 101, y + gameData.moveMapUpBy);
+        });
+        
+        if (itemsNextLevel.length) {
+            itemsNextLevel.forEach(function(item) {
+                const y = ((item.y - 5) * 83) - 25;
+                ctx.drawImage(Resources.get(item.sprite), item.x * 101, y + gameData.moveMapUpBy);
+            });
+        }
+        
         player.render();
-    }
-
-    /* This function does nothing but it could have been a good place to
-     * handle game reset states - maybe a new game menu or a game over screen
-     * those sorts of things. It's only called once by the init() method.
-     */
-    function reset() {
-        // noop
     }
 
     /* Go ahead and load all of the images we know we're going to need to
@@ -172,8 +225,15 @@ var Engine = (function(global) {
         'images/stone-block.png',
         'images/water-block.png',
         'images/grass-block.png',
+        'images/Rock.png',
         'images/enemy-bug.png',
-        'images/char-boy.png'
+        'images/char-boy.png',
+        'images/char-cat-girl.png',
+        'images/char-horn-girl.png',
+        'images/char-pink-girl.png',
+        'images/char-princess-girl.png',
+        'images/Star.png',
+        'images/Heart.png'
     ]);
     Resources.onReady(init);
 

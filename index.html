@@ -4,8 +4,41 @@
     <meta charset="UTF-8">
     <title>Effective JavaScript: Frogger</title>
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Oxygen" rel="stylesheet">
 </head>
 <body>
+    
+    <div id="stat-bar">
+        <span class="menu-item">Level: <span id="level">1</span>/10</span>
+        <span class="menu-item">Score: <span id="score">0</span></span>
+        <div id="health-bar"></div>
+    </div>
+    
+    <div id="losePanel" class="hidden panel">
+        <h1>You lost!</h1>
+        <button id="retry">Try Again</button>
+    </div>
+    
+    <div id="winPanel" class="hidden panel">
+        <h1>You won!</h1>
+        <h2>Score: <span id="win-score"></span></h2>
+        <button id="nextLevel">Play Again</button>
+    </div>
+    
+    <div id="menuPanel" class="panel">
+        <h1>Pick a character</h1>
+        
+        <div id="character-select">
+            <div class="character boy"></div>
+            <div class="character cat-girl"></div>
+            <div class="character horn-girl"></div>
+            <div class="character pink-girl"></div>
+            <div class="character princess-girl"></div>
+        </div>
+        
+        <button id="startGame">Play</button>
+    </div>
+    
     <script src="js/resources.js"></script>
     <script src="js/app.js"></script>
     <script src="js/engine.js"></script>
