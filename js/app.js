@@ -67,9 +67,11 @@ class Enemy extends Item {
         // which will ensure the game runs at the same speed for
         // all computers.
         if (this.reverse) {
+            // bug comes from right to left
             this.x -= (dt * this.speed);
             if (this.x < -101) this.x = 101 * 6;   
         } else {
+            // left to right
             this.x += (dt * this.speed);
             if (this.x > 101 * 5) this.x = -101;
         }
@@ -80,7 +82,9 @@ class Enemy extends Item {
         // Enemies are locked to a y-axis grid only, not a x-axis grid
         let x = this.x;
         let y = (this.y * 83) + gameData.moveMapUpBy;
-        if (this.reverse) {// if reversed, flip bug image
+        
+        // if reversed, flip bug image
+        if (this.reverse) {
             ctx.save();  
             ctx.translate(x + 101, y);
             x = y = 0;
@@ -182,16 +186,19 @@ function checkCollisions () {
         const dis = playerX - enemy.x;
         if (dis <= 75 && dis >= -77 && enemy.y === player.y) {
             if (!--player.health) {
+                // if no more health game is over
                 showLosePanel();
+            } else {
+                // reset level and player
+                gameData.score -= 10;
+                player.x = 2;
+                reset();
             }
-            gameData.score -= 10;
-            player.x = 2;
-            reset();
         }
     });
 }
 
-// Load in all items that belong to this level
+// return all items and enemies that belong to given level
 function generateMap (level) {
     const levelData = levels[level];
     let newItems = [];
@@ -219,11 +226,6 @@ function generateMap (level) {
     }
     
     return {newItems, newEnemies}
-}
-
-// for objects in the next level
-function loadObjects (level) {
-    
 }
 
 function updateStatusBar () {

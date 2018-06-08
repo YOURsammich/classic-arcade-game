@@ -117,6 +117,8 @@ const Engine = (function(global) {
         } else if (player.y === 0 && !moveMapUp) {
             if (++gameData.level !== levels.length) {
                 moveMapUp = true; 
+                
+                // load in items from the next level while scrolling
                 itemsNextLevel = generateMap(gameData.level).newItems;
             } else { // if no more levels, you've won
                 showWinPanel();
@@ -207,6 +209,7 @@ const Engine = (function(global) {
             ctx.drawImage(Resources.get(item.sprite), item.x * 101, y + gameData.moveMapUpBy);
         });
         
+        //draw items from next level
         if (itemsNextLevel.length) {
             itemsNextLevel.forEach(function(item) {
                 const y = ((item.y - 5) * 83) - 25;
